@@ -1,0 +1,18 @@
+# Core Plugin: Executable Quick Viewer
+
+🔎🧩 A **Nuclr Commander** quick-view plugin for safe, read-only previews of executable files.
+
+Supported formats:
+- 🪟 PE / COFF
+- 🐧 ELF
+- 🍎 Mach-O
+- 🍏 Universal / fat Mach-O
+
+What it shows:
+- 📋 format, type, architecture, bitness, endianness
+- 🧠 entrypoint / image-base / ABI / subsystem details where available
+- 🧱 sections or architecture slices
+- 🛡️ common flags such as ASLR / NX / PIE where available
+
+It does **not** execute the file and does not rely on native helper tools. ✅
+

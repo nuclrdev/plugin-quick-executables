@@ -5,7 +5,7 @@
 Read-only executable metadata preview for [Nuclr Commander](https://nuclr.dev), built to make PE, ELF, and Mach-O files reveal their secrets without making you open a hex editor, fire up a disassembler, or pretend this needed to be harder than it is.
 
 <p align="center">
-  <img src="images/screenshot-1.jpg" alt="Executable Quick Viewer screenshot" width="1100">
+  <img src="images/screenshot-2.jpg" alt="Executable Quick Viewer screenshot" width="1100">
 </p>
 
 ## Why This Exists

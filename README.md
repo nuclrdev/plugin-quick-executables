@@ -1,181 +1,112 @@
 # Executable Quick Viewer
 
-🔎🧩 A [Nuclr Commander](https://nuclr.dev) plugin for fast, safe, read-only previews of executable files across **Windows**, **Linux**, and **macOS**.
+Read-only executable metadata preview for [Nuclr Commander](https://nuclr.dev), with support for Windows PE, Linux ELF, and macOS Mach-O binaries.
 
-Instead of dumping raw bytes or trying to behave like a disassembler, this plugin focuses on the **generally available metadata** that is useful at a glance:
+![Executable Quick Viewer Screenshot](images/screenshot-1.jpg)
 
-- 🪟 **PE / COFF**: `.exe`, `.dll`, `.sys`, `.ocx`
-- 🐧 **ELF**: `.so`, `.bin`, `.run`, AppImage-style binaries
-- 🍎 **Mach-O**: `.dylib`, `.bundle`, `.o`, universal / fat binaries
+## Overview
 
-It never executes the target file. No sandbox escapes, no native helper tools, no platform-specific runtime dependencies. Just parse the headers and show the useful bits. ✅
+This plugin adds a quick-view panel for executable files. It is built for the common "what is this binary?" workflow: inspect the container format, architecture, bitness, endianness, entry information, selected flags, and section or slice layout without leaving the file manager.
 
----
+The parser is intentionally conservative. It reads stable header metadata only and does not execute the file, invoke native helper tools, or attempt deep reverse engineering.
 
-## ✨ What You See
+## Supported Formats
 
-The quick view panel is designed for a fast "what is this binary?" pass.
-
-### 📋 Summary
-- File name
-- File size
-- Container / format
-- Executable type
-- Architecture
-- Bitness
-- Endianness
-- Platform
-
-### 🧠 Details
-- Entrypoint / RVA
-- Image base
-- Machine / CPU type
-- Loader / subsystem
-- Security-related flags such as ASLR / NX / PIE where available
-- Linkage hints such as dynamic vs static where available
-- Timestamps and ABI information where available
-
-### 🧱 Structure
-- PE sections
-- ELF sections
-- Mach-O sections
-- Universal Mach-O architecture slices
-
----
-
-## 🌍 Cross-Platform Coverage
-
-This plugin recognizes the three major executable families:
-
-| Platform | Format | Examples |
+| Platform | Format | Typical files |
 |---|---|---|
-| 🪟 Windows | PE / COFF | `.exe`, `.dll`, `.sys` |
-| 🐧 Linux / Unix | ELF | executables, shared objects |
-| 🍎 macOS | Mach-O | executables, dylibs, bundles |
+| Windows | PE / COFF | `.exe`, `.dll`, `.sys`, `.ocx` |
+| Linux / Unix | ELF | executables, `.so`, AppImage-style binaries |
+| macOS | Mach-O | executables, `.dylib`, `.bundle`, `.o` |
+| macOS | Universal / Fat Mach-O | multi-architecture binaries |
 
-Universal / fat Mach-O binaries are also supported, with per-slice architecture listing. 🍏📦
+## What The Viewer Shows
 
----
+- File summary: name, size, container format, type, platform, architecture, bitness, endianness
+- Header details: machine / CPU type, subsystem, ABI, image base, entrypoint, interpreter, loader hints
+- Common flags: ASLR, NX, PIE, dynamic linking, stripped hints where available
+- Structure listing: PE sections, ELF sections, Mach-O sections, or fat-binary slices
 
-## 🛡️ Design Goals
+## What It Does Not Do
 
-- ⚡ **Fast**: reads lightweight header metadata only
-- 🔒 **Safe**: never executes the file being previewed
-- 🧾 **Practical**: shows stable, widely understood metadata instead of deep reverse-engineering output
-- 🧰 **Portable**: implemented in Java with no native parsing dependency
-- 👀 **Quick-view friendly**: optimized for glanceable inspection inside Nuclr Commander
+- Disassembly
+- Decompilation
+- Import / export browsing
+- Signature verification
+- Malware analysis
+- Binary execution
 
----
+If a field is not generally available in the standard executable headers, this plugin usually does not attempt to infer it.
 
-## 🚫 Out of Scope
+## Screenshot
 
-This plugin is intentionally conservative.
+The example below shows the quick-view panel rendering executable metadata directly inside Nuclr Commander:
 
-It does **not** try to provide:
+![Quick View Panel](images/screenshot-1.jpg)
 
-- ❌ disassembly
-- ❌ decompilation
-- ❌ symbol browsing UI
-- ❌ import/export trees
-- ❌ signature verification
-- ❌ malware analysis
-- ❌ code execution or runtime probing
-
-If the information is not generally available from the standard binary headers, it is probably not shown here.
-
----
-
-## 📦 Installation
-
-Copy the built plugin archive into your Nuclr Commander `plugins/` directory:
-
-```text
-quick-view-executables-1.0.0.zip
-```
-
-If you use signed plugin deployment in your local setup, also copy:
-
-```text
-quick-view-executables-1.0.0.zip.sig
-```
-
----
-
-## 🛠️ Building
+## Build
 
 Requirements:
 
-- ☕ Java 21+
-- 🧱 Maven 3.9+
-- 🧩 `plugins-sdk` installed locally
+- Java 21+
+- Maven 3.9+
+- `plugins-sdk` installed locally
 
-Build the plugin:
-
-```bash
-mvn clean package
-```
-
-Run tests:
+Commands:
 
 ```bash
 mvn test
+mvn clean package
 ```
 
-Create signed artifacts if your environment is configured for signing:
+If your environment is configured for signing:
 
 ```bash
 mvn clean verify -Djarsigner.storepass=<keystore-password>
 ```
 
-Artifacts are produced in `target/`. 🎯
+Build artifacts are written to `target/`.
 
----
+## Installation
 
-## 🧪 Test Coverage
+Copy the packaged plugin archive into the Nuclr Commander `plugins/` directory:
 
-The plugin includes parser-focused tests for:
+```text
+quick-view-executables-1.0.0.zip
+```
 
-- 🪟 PE metadata extraction
-- 🐧 ELF metadata extraction
-- 🍎 Fat Mach-O parsing
-- 🚨 unsupported / invalid file handling
+If your setup expects signed plugins, also copy:
 
----
+```text
+quick-view-executables-1.0.0.zip.sig
+```
 
-## 🏗️ Source Layout
+## Repository Layout
 
 ```text
 src/
-├── main/java/dev/nuclr/plugin/core/quick/viewer/
-│   ├── ExecutableQuickViewProvider.java
-│   ├── ExecutableViewPanel.java
-│   └── exec/
-│       ├── ExecutableParser.java
-│       ├── ExecutableFileInfo.java
-│       ├── ExecutableTableEntry.java
-│       └── ExecutableParseException.java
-├── main/resources/
-│   └── plugin.json
-└── test/java/dev/nuclr/plugin/core/quick/viewer/exec/
-    └── ExecutableParserTest.java
+|- main/java/dev/nuclr/plugin/core/quick/viewer/
+|  |- ExecutableQuickViewProvider.java
+|  |- ExecutableViewPanel.java
+|  `- exec/
+|     |- ExecutableParser.java
+|     |- ExecutableFileInfo.java
+|     |- ExecutableTableEntry.java
+|     `- ExecutableParseException.java
+|- main/resources/
+|  `- plugin.json
+`- test/java/dev/nuclr/plugin/core/quick/viewer/exec/
+   `- ExecutableParserTest.java
 ```
 
----
+## Testing
 
-## ❤️ Why This Exists
+The repository includes parser-focused tests covering:
 
-Sometimes you do not want to open a terminal, run `file`, or feed a binary into a heavyweight analysis tool just to answer simple questions like:
+- PE metadata extraction
+- ELF metadata extraction
+- Fat Mach-O parsing
+- Unsupported file handling
 
-- 🤔 Is this PE, ELF, or Mach-O?
-- 🧭 Which architecture is it built for?
-- 🧱 Is it a DLL / shared object / bundle?
-- 🔐 Does it expose common security flags?
-- 📚 What sections or slices does it contain?
-
-This plugin answers those questions directly inside Nuclr Commander.
-
----
-
-## 📄 License
+## License
 
 Apache License 2.0.

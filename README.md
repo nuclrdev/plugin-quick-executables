@@ -1,16 +1,30 @@
 # Executable Quick Viewer
 
-Read-only executable metadata preview for [Nuclr Commander](https://nuclr.dev), with support for Windows PE, Linux ELF, and macOS Mach-O binaries.
+**The least dramatic way to inspect dramatic binaries.**
 
-![Executable Quick Viewer Screenshot](images/screenshot-1.jpg)
+Read-only executable metadata preview for [Nuclr Commander](https://nuclr.dev), built to make PE, ELF, and Mach-O files reveal their secrets without making you open a hex editor, fire up a disassembler, or pretend this needed to be harder than it is.
 
-## Overview
+<p align="center">
+  <img src="images/screenshot-1.jpg" alt="Executable Quick Viewer screenshot" width="1100">
+</p>
 
-This plugin adds a quick-view panel for executable files. It is built for the common "what is this binary?" workflow: inspect the container format, architecture, bitness, endianness, entry information, selected flags, and section or slice layout without leaving the file manager.
+## Why This Exists
 
-The parser is intentionally conservative. It reads stable header metadata only and does not execute the file, invoke native helper tools, or attempt deep reverse engineering.
+Because sometimes you do not want an entire reverse-engineering ceremony just to answer:
 
-## Supported Formats
+- What format is this thing?
+- Which architecture is it built for?
+- Is it a PE executable, a shared object, a DLL, a bundle?
+- Does it expose the usual security flags?
+- What sections or slices does it contain?
+
+This plugin handles that fast, directly inside Nuclr Commander, with a level of restraint and competence that should frankly be more common.
+
+## What It Does
+
+Executable Quick Viewer is a focused quick-look plugin for executable metadata. It reads stable header information and presents it in a clean panel designed for glanceable inspection.
+
+It supports:
 
 | Platform | Format | Typical files |
 |---|---|---|
@@ -19,14 +33,20 @@ The parser is intentionally conservative. It reads stable header metadata only a
 | macOS | Mach-O | executables, `.dylib`, `.bundle`, `.o` |
 | macOS | Universal / Fat Mach-O | multi-architecture binaries |
 
-## What The Viewer Shows
+## What You Get
 
-- File summary: name, size, container format, type, platform, architecture, bitness, endianness
+- File summary: name, size, format, type, platform, architecture, bitness, endianness
 - Header details: machine / CPU type, subsystem, ABI, image base, entrypoint, interpreter, loader hints
 - Common flags: ASLR, NX, PIE, dynamic linking, stripped hints where available
-- Structure listing: PE sections, ELF sections, Mach-O sections, or fat-binary slices
+- Structure view: PE sections, ELF sections, Mach-O sections, or fat-binary slices
 
-## What It Does Not Do
+In short: all the generally available facts you actually want, without the usual binary-analysis theater.
+
+## What It Very Deliberately Does Not Do
+
+This plugin knows its job and performs it with discipline.
+
+It does not do:
 
 - Disassembly
 - Decompilation
@@ -34,14 +54,25 @@ The parser is intentionally conservative. It reads stable header metadata only a
 - Signature verification
 - Malware analysis
 - Binary execution
+- Wild guesswork dressed up as insight
 
-If a field is not generally available in the standard executable headers, this plugin usually does not attempt to infer it.
+If a piece of information is not generally available from the standard headers, this plugin usually does not pretend otherwise.
+
+## Design Principles
+
+- Fast enough to feel instant
+- Safe because it never executes the target file
+- Portable because it does not depend on native helper tools
+- Useful because it prefers stable metadata over noisy analysis output
+- Focused because quick view should stay quick
 
 ## Screenshot
 
-The example below shows the quick-view panel rendering executable metadata directly inside Nuclr Commander:
+The plugin in action, confidently turning opaque binaries into readable metadata:
 
-![Quick View Panel](images/screenshot-1.jpg)
+<p align="center">
+  <img src="images/screenshot-1.jpg" alt="Quick View Panel" width="1100">
+</p>
 
 ## Build
 

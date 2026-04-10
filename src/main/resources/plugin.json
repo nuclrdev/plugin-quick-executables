@@ -9,8 +9,5 @@
 	"website": "https://nuclr.dev",
 	"pageUrl": "https://nuclr.dev/plugins/core/executable-quick-viewer.html",
 	"docUrl": "https://nuclr.dev/plugins/core/executable-quick-viewer.html",
-	"type": "Official",
-	"quickViewProviders": [
-		"dev.nuclr.plugin.core.quick.viewer.ExecutableQuickViewProvider"
-	]
+	"type": "Official"
 }

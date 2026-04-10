@@ -22,7 +22,7 @@ import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.border.Border;
 
-import dev.nuclr.plugin.PluginPathResource;
+import dev.nuclr.platform.plugin.NuclrResourcePath;
 import dev.nuclr.plugin.core.quick.viewer.exec.ExecutableFileInfo;
 import dev.nuclr.plugin.core.quick.viewer.exec.ExecutableParser;
 import dev.nuclr.plugin.core.quick.viewer.exec.ExecutableTableEntry;
@@ -40,7 +40,7 @@ public class ExecutableViewPanel extends JPanel {
 		showMessage("No file selected.");
 	}
 
-	public boolean load(PluginPathResource item, AtomicBoolean cancelled) {
+	public boolean load(NuclrResourcePath item, AtomicBoolean cancelled) {
 		Thread prev = loadThread;
 		if (prev != null) {
 			prev.interrupt();
@@ -117,7 +117,7 @@ public class ExecutableViewPanel extends JPanel {
 		repaint();
 	}
 
-	private void showInfo(PluginPathResource item, ExecutableFileInfo info) {
+	private void showInfo(NuclrResourcePath item, ExecutableFileInfo info) {
 		removeAll();
 		JPanel content = buildContent(item, info);
 		JScrollPane scroll = new JScrollPane(
@@ -132,7 +132,7 @@ public class ExecutableViewPanel extends JPanel {
 		repaint();
 	}
 
-	private JPanel buildContent(PluginPathResource item, ExecutableFileInfo info) {
+	private JPanel buildContent(NuclrResourcePath item, ExecutableFileInfo info) {
 		JPanel panel = new JPanel();
 		panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
 		panel.setBorder(BorderFactory.createEmptyBorder(8, 10, 8, 10));

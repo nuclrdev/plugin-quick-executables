@@ -80,7 +80,7 @@ Requirements:
 
 - ☕ Java 21+
 - 🧱 Maven 3.9+
-- 🧩 `plugins-sdk` installed locally
+- 🧩 `platform-sdk` installed locally
 
 Commands:
 

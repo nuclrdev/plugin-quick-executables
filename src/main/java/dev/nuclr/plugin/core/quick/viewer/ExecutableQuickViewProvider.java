@@ -33,7 +33,7 @@ public class ExecutableQuickViewProvider implements NuclrPlugin {
 	}
 
 	@Override
-	public void load(NuclrPluginContext ctx) {
+	public void load(NuclrPluginContext ctx, boolean isTemplate) {
 		this.context = ctx;
 	}
 

@@ -2,6 +2,7 @@ package dev.nuclr.plugin.core.quick.viewer;
 
 import java.util.Locale;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.swing.JComponent;
@@ -9,16 +10,17 @@ import javax.swing.JComponent;
 import dev.nuclr.platform.NuclrThemeScheme;
 import dev.nuclr.platform.plugin.NuclrPlugin;
 import dev.nuclr.platform.plugin.NuclrPluginContext;
+import dev.nuclr.platform.plugin.NuclrPluginRole;
 import dev.nuclr.platform.plugin.NuclrResourcePath;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class ExecutableQuickViewProvider implements NuclrPlugin {
 
-	private static final Set<String> SUPPORTED_EXTENSIONS = Set.of(
-			"exe", "dll", "sys", "ocx",
-			"so", "bin", "run", "appimage",
-			"dylib", "mach", "bundle", "o", "a");
+	private String uuid = UUID.randomUUID().toString();
+
+	private static final Set<String> SUPPORTED_EXTENSIONS = Set.of("exe", "dll", "sys", "ocx", "so", "bin", "run",
+			"appimage", "dylib", "mach", "bundle", "o", "a");
 
 	private NuclrPluginContext context;
 	private ExecutableViewPanel panel;
@@ -51,11 +53,8 @@ public class ExecutableQuickViewProvider implements NuclrPlugin {
 			return false;
 		}
 		String lowered = mimeType.toLowerCase(Locale.ROOT);
-		return lowered.contains("executable")
-				|| lowered.contains("elf")
-				|| lowered.contains("mach")
-				|| lowered.contains("dosexec")
-				|| lowered.contains("x-msdownload");
+		return lowered.contains("executable") || lowered.contains("elf") || lowered.contains("mach")
+				|| lowered.contains("dosexec") || lowered.contains("x-msdownload");
 	}
 
 	@Override
@@ -114,7 +113,7 @@ public class ExecutableQuickViewProvider implements NuclrPlugin {
 	private String website = "https://nuclr.dev";
 	private String pageUrl = "https://nuclr.dev/plugins/core/executable-quick-viewer.html";
 	private String docUrl = "https://nuclr.dev/plugins/core/executable-quick-viewer.html";
-	
+
 	@Override
 	public String id() {
 		return id;
@@ -152,25 +151,36 @@ public class ExecutableQuickViewProvider implements NuclrPlugin {
 
 	@Override
 	public String pageUrl() {
-		// TODO Auto-generated method stub
-		return null;
+		return pageUrl;
 	}
 
 	@Override
 	public String docUrl() {
-		// TODO Auto-generated method stub
-		return null;
+		return docUrl;
 	}
 
 	@Override
 	public Developer type() {
-		// TODO Auto-generated method stub
-		return null;
+		return Developer.Official;
 	}
 
 	@Override
 	public void updateTheme(NuclrThemeScheme themeScheme) {
-		// TODO Auto-generated method stub
-		
 	}
+
+	@Override
+	public NuclrPluginRole role() {
+		return NuclrPluginRole.QuickViewer;
+	}
+
+	@Override
+	public NuclrResourcePath getCurrentResource() {
+		return null;
+	}
+
+	@Override
+	public String uuid() {
+		return uuid;
+	}
+
 }

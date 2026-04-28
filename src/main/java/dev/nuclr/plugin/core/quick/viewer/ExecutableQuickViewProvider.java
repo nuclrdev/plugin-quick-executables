@@ -1,5 +1,9 @@
 package dev.nuclr.plugin.core.quick.viewer;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
@@ -16,6 +20,14 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class ExecutableQuickViewProvider implements NuclrPlugin {
+	private static final int MACH_O_MAGIC = 0xFEEDFACE;
+	private static final int MACH_O_CIGAM = 0xCEFAEDFE;
+	private static final int MACH_O_MAGIC_64 = 0xFEEDFACF;
+	private static final int MACH_O_CIGAM_64 = 0xCFFAEDFE;
+	private static final int FAT_MAGIC = 0xCAFEBABE;
+	private static final int FAT_CIGAM = 0xBEBAFECA;
+	private static final int FAT_MAGIC_64 = 0xCAFEBABF;
+	private static final int FAT_CIGAM_64 = 0xBFBAFECA;
 
 	private String uuid = UUID.randomUUID().toString();
 
@@ -49,12 +61,47 @@ public class ExecutableQuickViewProvider implements NuclrPlugin {
 			return SUPPORTED_EXTENSIONS.contains(extension.toLowerCase(Locale.ROOT));
 		}
 		String mimeType = resource.getMimeType();
-		if (mimeType == null) {
+		if (mimeType != null) {
+			String lowered = mimeType.toLowerCase(Locale.ROOT);
+			if (lowered.contains("executable") || lowered.contains("elf") || lowered.contains("mach")
+					|| lowered.contains("dosexec") || lowered.contains("x-msdownload")) {
+				return true;
+			}
+		}
+		return hasRecognizedExecutableHeader(resource.getPath());
+	}
+
+	private static boolean hasRecognizedExecutableHeader(Path path) {
+		if (path == null || !Files.isRegularFile(path) || !Files.isReadable(path)) {
 			return false;
 		}
-		String lowered = mimeType.toLowerCase(Locale.ROOT);
-		return lowered.contains("executable") || lowered.contains("elf") || lowered.contains("mach")
-				|| lowered.contains("dosexec") || lowered.contains("x-msdownload");
+		try (InputStream in = Files.newInputStream(path)) {
+			byte[] header = in.readNBytes(4);
+			if (header.length < 4) {
+				return false;
+			}
+			if (header[0] == 'M' && header[1] == 'Z') {
+				return true;
+			}
+			if ((header[0] & 0xFF) == 0x7F && header[1] == 'E' && header[2] == 'L' && header[3] == 'F') {
+				return true;
+			}
+			int magic = ((header[0] & 0xFF) << 24)
+					| ((header[1] & 0xFF) << 16)
+					| ((header[2] & 0xFF) << 8)
+					| (header[3] & 0xFF);
+			return magic == MACH_O_MAGIC
+					|| magic == MACH_O_CIGAM
+					|| magic == MACH_O_MAGIC_64
+					|| magic == MACH_O_CIGAM_64
+					|| magic == FAT_MAGIC
+					|| magic == FAT_CIGAM
+					|| magic == FAT_MAGIC_64
+					|| magic == FAT_CIGAM_64;
+		} catch (IOException e) {
+			log.debug("Unable to inspect executable header for {}", path, e);
+			return false;
+		}
 	}
 
 	@Override

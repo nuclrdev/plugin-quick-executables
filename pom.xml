@@ -21,7 +21,7 @@
 		<dependency>
 			<groupId>dev.nuclr</groupId>
 			<artifactId>platform-sdk</artifactId>
-			<version>2.0.4</version>
+			<version>3.0.1</version>
 			<scope>provided</scope>
 		</dependency>
 		<!-- Source: https://mvnrepository.com/artifact/org.projectlombok/lombok -->
@@ -43,6 +43,18 @@
 			<version>2.21.1</version>
 			<scope>provided</scope>
 		</dependency>
+		<dependency>
+			<groupId>commons-io</groupId>
+			<artifactId>commons-io</artifactId>
+			<version>2.22.0</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-lang3</artifactId>
+			<version>3.20.0</version>
+			<scope>provided</scope>
+		</dependency>		
 		<dependency>
 			<groupId>org.junit.jupiter</groupId>
 			<artifactId>junit-jupiter</artifactId>

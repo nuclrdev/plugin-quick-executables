@@ -11,15 +11,16 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.swing.JComponent;
 
+import org.apache.commons.io.FilenameUtils;
+
 import dev.nuclr.platform.NuclrThemeScheme;
-import dev.nuclr.platform.plugin.NuclrPlugin;
 import dev.nuclr.platform.plugin.NuclrPluginContext;
-import dev.nuclr.platform.plugin.NuclrPluginRole;
-import dev.nuclr.platform.plugin.NuclrResourcePath;
+import dev.nuclr.platform.plugin.NuclrResource;
+import dev.nuclr.platform.plugin.QuickViewNuclrPlugin;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class ExecutableQuickViewProvider implements NuclrPlugin {
+public class ExecutableQuickViewProvider implements QuickViewNuclrPlugin {
 	private static final int MACH_O_MAGIC = 0xFEEDFACE;
 	private static final int MACH_O_CIGAM = 0xCEFAEDFE;
 	private static final int MACH_O_MAGIC_64 = 0xFEEDFACF;
@@ -47,28 +48,47 @@ public class ExecutableQuickViewProvider implements NuclrPlugin {
 	}
 
 	@Override
-	public void load(NuclrPluginContext ctx, boolean isTemplate) {
+	public void preinit(NuclrPluginContext ctx) {
 		this.context = ctx;
 	}
 
 	@Override
-	public boolean supports(NuclrResourcePath resource) {
+	public void init() {
+	}
+
+	@Override
+	public NuclrPluginContext getContext() {
+		return this.context;
+	}
+
+	@Override
+	public boolean supports(Path resource) {
 		if (resource == null) {
 			return false;
 		}
-		String extension = resource.getExtension();
+		String extension = extension(resource);
 		if (extension != null && !extension.isBlank()) {
 			return SUPPORTED_EXTENSIONS.contains(extension.toLowerCase(Locale.ROOT));
 		}
-		String mimeType = resource.getMimeType();
-		if (mimeType != null) {
-			String lowered = mimeType.toLowerCase(Locale.ROOT);
-			if (lowered.contains("executable") || lowered.contains("elf") || lowered.contains("mach")
-					|| lowered.contains("dosexec") || lowered.contains("x-msdownload")) {
-				return true;
-			}
+		return hasRecognizedExecutableHeader(resource);
+	}
+
+	private static String extension(Path path) {
+		var name = path.getFileName() != null ? path.getFileName().toString() : path.toString();
+		return FilenameUtils.getExtension(name);
+	}
+
+	private static String extension(NuclrResource resource) {
+		String name = resource.getName();
+		if ((name == null || name.isBlank()) && resource.getPath() != null
+				&& resource.getPath().getFileName() != null) {
+			name = resource.getPath().getFileName().toString();
 		}
-		return hasRecognizedExecutableHeader(resource.getPath());
+		if (name == null) {
+			return null;
+		}
+		int dot = name.lastIndexOf('.');
+		return dot > 0 ? name.substring(dot + 1) : null;
 	}
 
 	private static boolean hasRecognizedExecutableHeader(Path path) {
@@ -105,7 +125,7 @@ public class ExecutableQuickViewProvider implements NuclrPlugin {
 	}
 
 	@Override
-	public boolean openResource(NuclrResourcePath resource, AtomicBoolean cancelled) {
+	public boolean openResource(NuclrResource resource, AtomicBoolean cancelled) {
 		if (currentCancelled != null) {
 			currentCancelled.set(true);
 		}
@@ -207,7 +227,7 @@ public class ExecutableQuickViewProvider implements NuclrPlugin {
 	}
 
 	@Override
-	public Developer type() {
+	public Developer developer() {
 		return Developer.Official;
 	}
 
@@ -216,12 +236,7 @@ public class ExecutableQuickViewProvider implements NuclrPlugin {
 	}
 
 	@Override
-	public NuclrPluginRole role() {
-		return NuclrPluginRole.QuickViewer;
-	}
-
-	@Override
-	public NuclrResourcePath getCurrentResource() {
+	public NuclrResource getCurrentResource() {
 		return null;
 	}
 

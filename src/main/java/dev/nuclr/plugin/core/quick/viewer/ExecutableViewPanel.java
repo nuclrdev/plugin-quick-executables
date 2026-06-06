@@ -22,7 +22,7 @@ import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.border.Border;
 
-import dev.nuclr.platform.plugin.NuclrResourcePath;
+import dev.nuclr.platform.plugin.NuclrResource;
 import dev.nuclr.plugin.core.quick.viewer.exec.ExecutableFileInfo;
 import dev.nuclr.plugin.core.quick.viewer.exec.ExecutableParser;
 import dev.nuclr.plugin.core.quick.viewer.exec.ExecutableTableEntry;
@@ -40,7 +40,7 @@ public class ExecutableViewPanel extends JPanel {
 		showMessage("No file selected.");
 	}
 
-	public boolean load(NuclrResourcePath item, AtomicBoolean cancelled) {
+	public boolean load(NuclrResource item, AtomicBoolean cancelled) {
 		Thread prev = loadThread;
 		if (prev != null) {
 			prev.interrupt();
@@ -49,7 +49,7 @@ public class ExecutableViewPanel extends JPanel {
 		loadThread = Thread.ofVirtual().start(() -> {
 			try {
 				byte[] data;
-				try (var in = item.openStream()) {
+				try (var in = java.nio.file.Files.newInputStream(item.getPath())) {
 					data = in.readAllBytes();
 				}
 				if (cancelled.get()) {
@@ -117,7 +117,7 @@ public class ExecutableViewPanel extends JPanel {
 		repaint();
 	}
 
-	private void showInfo(NuclrResourcePath item, ExecutableFileInfo info) {
+	private void showInfo(NuclrResource item, ExecutableFileInfo info) {
 		removeAll();
 		JPanel content = buildContent(item, info);
 		JScrollPane scroll = new JScrollPane(
@@ -132,14 +132,14 @@ public class ExecutableViewPanel extends JPanel {
 		repaint();
 	}
 
-	private JPanel buildContent(NuclrResourcePath item, ExecutableFileInfo info) {
+	private JPanel buildContent(NuclrResource item, ExecutableFileInfo info) {
 		JPanel panel = new JPanel();
 		panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
 		panel.setBorder(BorderFactory.createEmptyBorder(8, 10, 8, 10));
 
 		FormSection summary = new FormSection("Summary");
 		summary.addRow("Name", item.getName());
-		summary.addRow("File size", formatSize(item.getSizeBytes()));
+		summary.addRow("File size", formatSize(item.getLength()));
 		summary.addRow("Format", info.getFormat());
 		summary.addRow("Type", info.getFileType());
 		summary.addRow("Architecture", info.getArchitecture());

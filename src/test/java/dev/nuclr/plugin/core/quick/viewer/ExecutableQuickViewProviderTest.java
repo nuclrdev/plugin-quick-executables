@@ -9,7 +9,7 @@ import java.nio.file.Path;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import dev.nuclr.platform.plugin.NuclrResourcePath;
+import dev.nuclr.platform.plugin.NuclrResource;
 
 class ExecutableQuickViewProviderTest {
 
@@ -21,9 +21,9 @@ class ExecutableQuickViewProviderTest {
 				0, 0, 0, 0
 		});
 
-		NuclrResourcePath resource = new NuclrResourcePath(binary);
+		NuclrResource resource = new NuclrResource(binary) {};
 
-		assertTrue(new ExecutableQuickViewProvider().supports(resource));
+		assertTrue(new ExecutableQuickViewProvider().supports(resource.getPath()));
 	}
 
 	@Test
@@ -31,8 +31,8 @@ class ExecutableQuickViewProviderTest {
 		Path file = tempDir.resolve("notes");
 		Files.writeString(file, "hello");
 
-		NuclrResourcePath resource = new NuclrResourcePath(file);
+		NuclrResource resource = new NuclrResource(file) {};
 
-		assertFalse(new ExecutableQuickViewProvider().supports(resource));
+		assertFalse(new ExecutableQuickViewProvider().supports(resource.getPath()));
 	}
 }

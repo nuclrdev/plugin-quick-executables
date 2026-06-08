@@ -1,8 +1,6 @@
 package dev.nuclr.plugin.core.quick.viewer;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Locale;
 import java.util.Set;
@@ -62,7 +60,7 @@ public class ExecutableQuickViewProvider implements QuickViewNuclrPlugin {
 	}
 
 	@Override
-	public boolean supports(Path resource) {
+	public boolean supports(NuclrResource resource) {
 		if (resource == null) {
 			return false;
 		}
@@ -70,7 +68,12 @@ public class ExecutableQuickViewProvider implements QuickViewNuclrPlugin {
 		if (extension != null && !extension.isBlank()) {
 			return SUPPORTED_EXTENSIONS.contains(extension.toLowerCase(Locale.ROOT));
 		}
-		return hasRecognizedExecutableHeader(resource);
+		try {
+			return hasRecognizedExecutableHeader(resource);
+		} catch (Exception e) {
+			log.error("Failed to check executable header for {}: {}", resource, e.getMessage());
+			return false;
+		}
 	}
 
 	private static String extension(Path path) {
@@ -91,11 +94,13 @@ public class ExecutableQuickViewProvider implements QuickViewNuclrPlugin {
 		return dot > 0 ? name.substring(dot + 1) : null;
 	}
 
-	private static boolean hasRecognizedExecutableHeader(Path path) {
-		if (path == null || !Files.isRegularFile(path) || !Files.isReadable(path)) {
+	private static boolean hasRecognizedExecutableHeader(NuclrResource resource) throws Exception {
+		
+		if (resource == null || resource.isFolder() || false == resource.isReadable() || resource.getPath() == null) {
 			return false;
 		}
-		try (InputStream in = Files.newInputStream(path)) {
+		
+		try (var in = resource.openInputStream()) {
 			byte[] header = in.readNBytes(4);
 			if (header.length < 4) {
 				return false;
@@ -119,7 +124,7 @@ public class ExecutableQuickViewProvider implements QuickViewNuclrPlugin {
 					|| magic == FAT_MAGIC_64
 					|| magic == FAT_CIGAM_64;
 		} catch (IOException e) {
-			log.debug("Unable to inspect executable header for {}", path, e);
+			log.debug("Unable to inspect executable header for {}", resource, e);
 			return false;
 		}
 	}

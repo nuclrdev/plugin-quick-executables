@@ -21,9 +21,9 @@ class ExecutableQuickViewProviderTest {
 				0, 0, 0, 0
 		});
 
-		NuclrResource resource = new NuclrResource(binary) {};
+		NuclrResource resource = resourceFor(binary);
 
-		assertTrue(new ExecutableQuickViewProvider().supports(resource.getPath()));
+		assertTrue(new ExecutableQuickViewProvider().supports(resource));
 	}
 
 	@Test
@@ -31,8 +31,19 @@ class ExecutableQuickViewProviderTest {
 		Path file = tempDir.resolve("notes");
 		Files.writeString(file, "hello");
 
-		NuclrResource resource = new NuclrResource(file) {};
+		NuclrResource resource = resourceFor(file);
 
-		assertFalse(new ExecutableQuickViewProvider().supports(resource.getPath()));
+		assertFalse(new ExecutableQuickViewProvider().supports(resource));
+	}
+
+	private static NuclrResource resourceFor(Path path) {
+		NuclrResource resource = new NuclrResource(path) {
+			@Override
+			public java.io.InputStream openInputStream(java.nio.file.OpenOption... options) throws Exception {
+				return Files.newInputStream(getPath(), options);
+			}
+		};
+		resource.setName(path.getFileName().toString());
+		return resource;
 	}
 }

@@ -49,7 +49,7 @@ public class ExecutableViewPanel extends JPanel {
 		loadThread = Thread.ofVirtual().start(() -> {
 			try {
 				byte[] data;
-				try (var in = java.nio.file.Files.newInputStream(item.getPath())) {
+				try (var in = item.openInputStream()) {
 					data = in.readAllBytes();
 				}
 				if (cancelled.get()) {

@@ -1,6 +1,6 @@
-# Executable Quick Viewer
+# 🔎 Executable Quick Viewer
 
-**🔎 The least dramatic way to inspect dramatic binaries.**
+**The least dramatic way to inspect dramatic binaries.**
 
 Read-only executable metadata preview for [Nuclr Commander](https://nuclr.dev), built to make PE, ELF, and Mach-O files reveal their secrets without making you open a hex editor, fire up a disassembler, or pretend this needed to be harder than it is. ⚙️
 
@@ -24,7 +24,7 @@ This plugin handles that fast, directly inside Nuclr Commander, with a level of 
 
 Executable Quick Viewer is a focused quick-look plugin for executable metadata. It reads stable header information and presents it in a clean panel designed for glanceable inspection.
 
-It supports:
+## 🧩 Supported Formats
 
 | Platform | Format | Typical files |
 |---|---|---|
@@ -44,10 +44,6 @@ In short: all the generally available facts you actually want, without the usual
 
 ## 🚫 What It Very Deliberately Does Not Do
 
-This plugin knows its job and performs it with discipline.
-
-It does not do:
-
 - ❌ Disassembly
 - ❌ Decompilation
 - ❌ Import / export browsing
@@ -56,87 +52,52 @@ It does not do:
 - ❌ Binary execution
 - ❌ Wild guesswork dressed up as insight
 
-If a piece of information is not generally available from the standard headers, this plugin usually does not pretend otherwise.
-
-## 🧭 Design Principles
-
-- ⚡ Fast enough to feel instant
-- 🔒 Safe because it never executes the target file
-- 🌍 Portable because it does not depend on native helper tools
-- 🎯 Useful because it prefers stable metadata over noisy analysis output
-- 👀 Focused because quick view should stay quick
-
 ## 🖼️ Screenshot
-
-The plugin in action, confidently turning opaque binaries into readable metadata:
 
 <p align="center">
   <img src="images/screenshot-1.jpg" alt="Quick View Panel" width="1100">
 </p>
 
-## 🛠️ Build
+## 📥 Installation
 
-Requirements:
-
-- ☕ Java 21+
-- 🧱 Maven 3.9+
-- 🧩 `platform-sdk` installed locally
-
-Commands:
-
-```bash
-mvn test
-mvn clean package
-```
-
-If your environment is configured for signing:
-
-```bash
-mvn clean verify -Djarsigner.storepass=<keystore-password>
-```
-
-Build artifacts are written to `target/`.
-
-## 📦 Installation
-
-Copy the packaged plugin archive into the Nuclr Commander `plugins/` directory:
+Copy the signed plugin archive and detached signature into the Nuclr Commander `plugins/` directory:
 
 ```text
-quick-view-executables-1.0.0.zip
+quick-view-executables-<version>.zip
+quick-view-executables-<version>.zip.sig
 ```
 
-If your setup expects signed plugins, also copy:
+Nuclr Commander verifies the RSA-SHA256 signature against `nuclr-cert.pem` on load. The plugin becomes available immediately without a restart.
+
+## 🗂️ Source Layout
 
 ```text
-quick-view-executables-1.0.0.zip.sig
+src/main/java/dev/nuclr/plugin/core/quick/viewer/
+├── ExecutableQuickViewProvider.java   plugin entry point
+├── ExecutableViewPanel.java           Swing UI renderer
+└── exec/
+    ├── ExecutableParser.java          PE / ELF / Mach-O header parsing
+    ├── ExecutableFileInfo.java        parsed metadata model
+    ├── ExecutableTableEntry.java      display row model
+    └── ExecutableParseException.java  parse error
 ```
 
-## 🗂️ Repository Layout
+## 🧪 Tests
 
-```text
-src/
-|- main/java/dev/nuclr/plugin/core/quick/viewer/
-|  |- ExecutableQuickViewProvider.java
-|  |- ExecutableViewPanel.java
-|  `- exec/
-|     |- ExecutableParser.java
-|     |- ExecutableFileInfo.java
-|     |- ExecutableTableEntry.java
-|     `- ExecutableParseException.java
-|- main/resources/
-|  `- plugin.json
-`- test/java/dev/nuclr/plugin/core/quick/viewer/exec/
-   `- ExecutableParserTest.java
-```
-
-## 🧪 Testing
-
-The repository includes parser-focused tests covering:
+The repository includes parser-focused unit tests covering:
 
 - 🪟 PE metadata extraction
 - 🐧 ELF metadata extraction
 - 🍎 Fat Mach-O parsing
 - 🚨 Unsupported file handling
+
+## 📚 Dependencies
+
+All dependencies are provided by Nuclr Commander at runtime — nothing extra is bundled in the plugin ZIP.
+
+| Library | Version | Purpose |
+|---|---|---|
+| `dev.nuclr:platform-sdk` | `3.0.1` | Nuclr platform interfaces |
 
 ## 📄 License
 

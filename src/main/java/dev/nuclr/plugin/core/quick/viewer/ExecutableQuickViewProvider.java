@@ -178,7 +178,7 @@ public class ExecutableQuickViewProvider implements QuickViewNuclrPlugin {
 
 	private String name = "Executable Quick Viewer";
 	private String id = "dev.nuclr.plugin.core.quickviewer.executables";
-	private String version = "1.0.0";
+	private final String version = loadVersion();
 	private String description = "A quick viewer for PE, ELF and Mach-O executables and libraries.";
 	private String author = "Nuclr Development Team";
 	private String license = "Apache-2.0";
@@ -199,6 +199,16 @@ public class ExecutableQuickViewProvider implements QuickViewNuclrPlugin {
 	@Override
 	public String version() {
 		return version;
+	}
+	private static String loadVersion() {
+		try (var stream = ExecutableQuickViewProvider.class.getResourceAsStream("/plugin.properties")) {
+			if (stream == null) return "unknown";
+			var props = new java.util.Properties();
+			props.load(stream);
+			return props.getProperty("version", "unknown");
+		} catch (java.io.IOException e) {
+			return "unknown";
+		}
 	}
 
 	@Override

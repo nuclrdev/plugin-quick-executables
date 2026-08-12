@@ -33,6 +33,8 @@ Executable Quick Viewer is a focused quick-look plugin for executable metadata. 
 | 🍎 macOS | Mach-O | executables, `.dylib`, `.bundle`, `.o` |
 | 🍏 macOS | Universal / Fat Mach-O | multi-architecture binaries |
 
+Recognised extensions are `exe`, `dll`, `sys`, `ocx`, `so`, `bin`, `run`, `appimage`, `dylib`, `mach`, `bundle`, `o` and `a`. Files with **no** extension are sniffed by header magic instead, so extensionless Unix binaries preview correctly too.
+
 ## 📋 What You Get
 
 - 📄 File summary: name, size, format, type, platform, architecture, bitness, endianness

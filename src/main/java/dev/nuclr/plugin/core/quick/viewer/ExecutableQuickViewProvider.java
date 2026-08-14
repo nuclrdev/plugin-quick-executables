@@ -157,10 +157,6 @@ public class ExecutableQuickViewProvider implements QuickViewNuclrPlugin {
 		context = null;
 	}
 
-	@Override
-	public int priority() {
-		return 1;
-	}
 
 	@Override
 	public boolean onFocusGained() {
@@ -176,75 +172,7 @@ public class ExecutableQuickViewProvider implements QuickViewNuclrPlugin {
 		return false;
 	}
 
-	private String name = "Executable Quick Viewer";
-	private String id = "dev.nuclr.plugin.core.quickviewer.executables";
-	private final String version = loadVersion();
-	private String description = "A quick viewer for PE, ELF and Mach-O executables and libraries.";
-	private String author = "Nuclr Development Team";
-	private String license = "Apache-2.0";
-	private String website = "https://nuclr.dev";
-	private String pageUrl = "https://nuclr.dev/plugins/core/executable-quick-viewer.html";
-	private String docUrl = "https://nuclr.dev/plugins/core/executable-quick-viewer.html";
 
-	@Override
-	public String id() {
-		return id;
-	}
-
-	@Override
-	public String name() {
-		return name;
-	}
-
-	@Override
-	public String version() {
-		return version;
-	}
-	private static String loadVersion() {
-		try (var stream = ExecutableQuickViewProvider.class.getResourceAsStream("/plugin.properties")) {
-			if (stream == null) return "unknown";
-			var props = new java.util.Properties();
-			props.load(stream);
-			return props.getProperty("version", "unknown");
-		} catch (java.io.IOException e) {
-			return "unknown";
-		}
-	}
-
-	@Override
-	public String description() {
-		return description;
-	}
-
-	@Override
-	public String author() {
-		return author;
-	}
-
-	@Override
-	public String license() {
-		return license;
-	}
-
-	@Override
-	public String website() {
-		return null;
-	}
-
-	@Override
-	public String pageUrl() {
-		return pageUrl;
-	}
-
-	@Override
-	public String docUrl() {
-		return docUrl;
-	}
-
-	@Override
-	public Developer developer() {
-		return Developer.Official;
-	}
 
 	@Override
 	public void updateTheme(NuclrThemeScheme themeScheme) {
@@ -259,5 +187,6 @@ public class ExecutableQuickViewProvider implements QuickViewNuclrPlugin {
 	public String uuid() {
 		return uuid;
 	}
+
 
 }

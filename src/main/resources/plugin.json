@@ -12,9 +12,9 @@
 			"description": "A quick viewer for PE, ELF and Mach-O executables and libraries.",
 			"author": "Nuclr Development Team",
 			"license": "Apache-2.0",
-			"website": null,
-			"pageUrl": "https://nuclr.dev/plugins/core/executable-quick-viewer.html",
-			"docUrl": "https://nuclr.dev/plugins/core/executable-quick-viewer.html",
+			"website": "https://nuclr.dev",
+			"pageUrl": "https://github.com/nuclrdev/plugin-quick-executables",
+			"docUrl": "https://github.com/nuclrdev/plugin-quick-executables",
 			"developer": "Official",
 			"singleton": true,
 			"priority": 1

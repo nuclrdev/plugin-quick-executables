@@ -61,12 +61,18 @@ public class ExecutableQuickViewProvider implements QuickViewNuclrPlugin {
 
 	@Override
 	public boolean supports(NuclrResource resource) {
-		if (resource == null) {
+		if (resource == null || resource.isFolder() || !resource.isReadable()) {
 			return false;
 		}
 		String extension = extension(resource);
 		if (extension != null && !extension.isBlank()) {
 			return SUPPORTED_EXTENSIONS.contains(extension.toLowerCase(Locale.ROOT));
+		}
+		// Reading the header means opening the resource, and for one with no local file that
+		// can mean fetching the whole object just to see its first four bytes. Selection runs
+		// on every cursor move, so extension-less remote resources are left alone.
+		if (resource.getPath() == null) {
+			return false;
 		}
 		try {
 			return hasRecognizedExecutableHeader(resource);
@@ -95,11 +101,7 @@ public class ExecutableQuickViewProvider implements QuickViewNuclrPlugin {
 	}
 
 	private static boolean hasRecognizedExecutableHeader(NuclrResource resource) throws Exception {
-		
-		if (resource == null || resource.isFolder() || false == resource.isReadable() || resource.getPath() == null) {
-			return false;
-		}
-		
+
 		try (var in = resource.openInputStream()) {
 			byte[] header = in.readNBytes(4);
 			if (header.length < 4) {

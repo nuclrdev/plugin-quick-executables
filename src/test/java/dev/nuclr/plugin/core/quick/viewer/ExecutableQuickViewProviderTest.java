@@ -36,6 +36,36 @@ class ExecutableQuickViewProviderTest {
 		assertFalse(new ExecutableQuickViewProvider().supports(resource));
 	}
 
+	@Test
+	void supportsAStreamOnlyExecutableByName() {
+		// A bucket object: claimed on its extension, without opening it.
+		var opened = new java.util.concurrent.atomic.AtomicBoolean();
+		assertTrue(new ExecutableQuickViewProvider().supports(streamOnly("setup.exe", opened)));
+		assertFalse(opened.get(), "selection must not open a stream-only resource");
+	}
+
+	@Test
+	void rejectsAStreamOnlyResourceWithoutReadingItsHeader() {
+		// Reading the header of a remote resource can mean downloading it in full, so an
+		// extension-less name is rejected outright.
+		var opened = new java.util.concurrent.atomic.AtomicBoolean();
+		assertFalse(new ExecutableQuickViewProvider().supports(streamOnly("tool", opened)));
+		assertFalse(opened.get(), "selection must not open a stream-only resource");
+	}
+
+	/** A resource with no local file, exactly as a remote panel supplies it. */
+	private static NuclrResource streamOnly(String name, java.util.concurrent.atomic.AtomicBoolean opened) {
+		NuclrResource resource = new NuclrResource(null) {
+			@Override
+			public java.io.InputStream openInputStream(java.nio.file.OpenOption... options) {
+				opened.set(true);
+				return new java.io.ByteArrayInputStream(new byte[] { 'M', 'Z', 0, 0 });
+			}
+		};
+		resource.setName(name);
+		return resource;
+	}
+
 	private static NuclrResource resourceFor(Path path) {
 		NuclrResource resource = new NuclrResource(path) {
 			@Override

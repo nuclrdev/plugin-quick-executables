@@ -1,8 +1,15 @@
 package dev.nuclr.plugin.core.quick.viewer;
 
+import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -15,6 +22,9 @@ import dev.nuclr.platform.NuclrThemeScheme;
 import dev.nuclr.platform.plugin.NuclrPluginContext;
 import dev.nuclr.platform.plugin.NuclrResource;
 import dev.nuclr.platform.plugin.QuickViewNuclrPlugin;
+import dev.nuclr.plugin.core.quick.viewer.exec.ExecutableFileInfo;
+import dev.nuclr.plugin.core.quick.viewer.exec.ExecutableParser;
+import dev.nuclr.plugin.core.quick.viewer.exec.ExecutableTableEntry;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -139,6 +149,51 @@ public class ExecutableQuickViewProvider implements QuickViewNuclrPlugin {
 		currentCancelled = cancelled;
 		panel();
 		return panel.load(resource, cancelled);
+	}
+
+	/** Headers, sections and tables all sit well inside this for the binaries worth drawing. */
+	private static final int MAX_THUMBNAIL_BYTES = 64 * 1024 * 1024;
+
+	@Override
+	public boolean supportsThumbnails() {
+		return true;
+	}
+
+	/** A header page: format and target, the key header fields, then the section table. */
+	@Override
+	public BufferedImage thumbnail(NuclrResource resource, int maxWidth, int maxHeight, AtomicBoolean cancelled) {
+		if (maxWidth <= 0 || maxHeight <= 0 || !supports(resource)) {
+			return null;
+		}
+		try {
+			byte[] data;
+			try (var in = resource.openInputStream()) {
+				data = in.readNBytes(MAX_THUMBNAIL_BYTES);
+			}
+			if (cancelled != null && cancelled.get()) {
+				return null;
+			}
+			ExecutableFileInfo info = ExecutableParser.parse(resource.getName(), data);
+			List<PageThumbnail.Line> lines = new ArrayList<>();
+			lines.add(PageThumbnail.Line.title(info.getFormat()));
+			lines.add(PageThumbnail.Line.muted(Stream.of(info.getFileType(), info.getPlatform(),
+					info.getArchitecture(), info.getBitness())
+					.filter(Objects::nonNull).filter(value -> !value.isBlank())
+					.collect(Collectors.joining(" · "))));
+			lines.add(PageThumbnail.Line.blank());
+			for (Map.Entry<String, String> detail : info.getDetails().entrySet()) {
+				lines.add(PageThumbnail.Line.text(detail.getKey() + ": " + detail.getValue()));
+			}
+			if (!info.getEntries().isEmpty()) {
+				lines.add(PageThumbnail.Line.heading(info.getEntriesTitle() != null ? info.getEntriesTitle() : "Entries"));
+				info.getEntries().stream().limit(100).map(ExecutableTableEntry::getName)
+						.forEach(name -> lines.add(PageThumbnail.Line.mono(name)));
+			}
+			return PageThumbnail.render(lines, maxWidth, maxHeight, cancelled);
+		} catch (Exception e) {
+			log.debug("No thumbnail for {}: {}", resource.getName(), e.toString());
+			return null;
+		}
 	}
 
 	@Override

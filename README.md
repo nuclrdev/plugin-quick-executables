@@ -60,6 +60,12 @@ In short: all the generally available facts you actually want, without the usual
   <img src="images/screenshot-1.jpg" alt="Quick View Panel" width="1100">
 </p>
 
+## 🖼️ Thumbnail
+
+A header page: the format, file type, platform, architecture and bitness, the key header fields, then the section or entry table.
+
+It implements the platform SDK 6.0.0 thumbnail methods, so plugins that want a picture of a file - attachment chips in AI Projects, for one - get it through Commander.
+
 ## 📥 Installation
 
 Copy the signed plugin archive and detached signature into the Nuclr Commander `plugins/` directory:
@@ -99,7 +105,7 @@ All dependencies are provided by Nuclr Commander at runtime — nothing extra is
 
 | Library | Version | Purpose |
 |---|---|---|
-| `dev.nuclr:platform-sdk` | `3.0.1` | Nuclr platform interfaces |
+| `dev.nuclr:platform-sdk` | `6.0.0` | Nuclr platform interfaces |
 
 ## 📄 License
 

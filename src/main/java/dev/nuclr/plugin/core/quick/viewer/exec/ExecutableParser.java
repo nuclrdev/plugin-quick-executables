@@ -1,10 +1,13 @@
 package dev.nuclr.plugin.core.quick.viewer.exec;
 
+import static dev.nuclr.plugin.core.quick.viewer.Messages.tr;
+
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+
 
 public final class ExecutableParser {
 
@@ -18,7 +21,7 @@ public final class ExecutableParser {
 
 	public static ExecutableFileInfo parse(String fileName, byte[] data) throws ExecutableParseException {
 		if (data.length < 4) {
-			throw new ExecutableParseException("File is too small to inspect.");
+			throw new ExecutableParseException(tr("parse.error.too.small"));
 		}
 		if (isPe(data)) {
 			return parsePe(data);
@@ -32,15 +35,17 @@ public final class ExecutableParser {
 		if (isFatMachO(data)) {
 			return parseFatMachO(data);
 		}
-		throw new ExecutableParseException("Unrecognized executable format" + suffix(fileName) + ".");
+		throw new ExecutableParseException(fileName == null || fileName.isBlank()
+				? tr("parse.error.unrecognized")
+				: tr("parse.error.unrecognized.file", fileName));
 	}
 
 	private static ExecutableFileInfo parsePe(byte[] data) throws ExecutableParseException {
 		BinaryReader r = BinaryReader.littleEndian(data);
 		int peOffset = (int) r.u32(0x3C);
-		r.requireRange(peOffset, 24, "Invalid PE header offset");
+		r.requireRange(peOffset, 24, "parse.error.pe.header.offset");
 		if (r.u32(peOffset) != 0x00004550L) {
-			throw new ExecutableParseException("Missing PE signature.");
+			throw new ExecutableParseException(tr("parse.error.pe.signature"));
 		}
 
 		int coff = peOffset + 4;
@@ -51,11 +56,11 @@ public final class ExecutableParser {
 		int characteristics = r.u16(coff + 18);
 
 		int optional = coff + 20;
-		r.requireRange(optional, optionalHeaderSize, "PE optional header is truncated");
+		r.requireRange(optional, optionalHeaderSize, "parse.error.pe.optional.truncated");
 		int magic = r.u16(optional);
 		boolean is64 = magic == 0x20B;
 		if (!(magic == 0x10B || magic == 0x20B)) {
-			throw new ExecutableParseException("Unsupported PE optional header type.");
+			throw new ExecutableParseException(tr("parse.error.pe.optional.type"));
 		}
 
 		long entryPoint = r.u32(optional + 16);
@@ -69,17 +74,17 @@ public final class ExecutableParser {
 		details.put("Subsystem", peSubsystem(subsystem));
 		details.put("Image Base", hex(imageBase));
 		details.put("Entrypoint RVA", hex(entryPoint));
-		details.put("Sections", Integer.toString(numberOfSections));
-		details.put("Timestamp", formatTimestamp(timestamp));
-		details.put("ASLR", hasFlag(dllCharacteristics, 0x0040) ? "Enabled" : "No");
-		details.put("NX", hasFlag(dllCharacteristics, 0x0100) ? "Enabled" : "No");
-		details.put("Large Address Aware", hasFlag(characteristics, 0x0020) ? "Yes" : "No");
-		details.put("Debug Stripped", hasFlag(characteristics, 0x0200) ? "Yes" : "No");
+		details.put(tr("detail.sections"), Integer.toString(numberOfSections));
+		details.put(tr("detail.timestamp"), formatTimestamp(timestamp));
+		details.put("ASLR", hasFlag(dllCharacteristics, 0x0040) ? tr("value.enabled") : tr("value.no"));
+		details.put("NX", hasFlag(dllCharacteristics, 0x0100) ? tr("value.enabled") : tr("value.no"));
+		details.put("Large Address Aware", hasFlag(characteristics, 0x0020) ? tr("value.yes") : tr("value.no"));
+		details.put(tr("detail.debug.stripped"), hasFlag(characteristics, 0x0200) ? tr("value.yes") : tr("value.no"));
 
 		List<ExecutableTableEntry> entries = new ArrayList<>();
 		for (int i = 0; i < numberOfSections; i++) {
 			int offset = sectionTable + (i * 40);
-			r.requireRange(offset, 40, "PE section table is truncated");
+			r.requireRange(offset, 40, "parse.error.pe.sections.truncated");
 			String name = r.nullTerminatedAscii(offset, 8);
 			long virtualAddress = r.u32(offset + 12);
 			long rawSize = r.u32(offset + 16);
@@ -95,12 +100,12 @@ public final class ExecutableParser {
 
 		return ExecutableFileInfo.builder()
 				.format("PE")
-				.fileType(hasFlag(characteristics, 0x2000) ? "Dynamic-link library" : "Executable image")
+				.fileType(hasFlag(characteristics, 0x2000) ? tr("type.pe.dll") : tr("type.pe.exe"))
 				.platform("Windows")
 				.architecture(peMachine(machine))
-				.bitness(is64 ? "64-bit" : "32-bit")
+				.bitness(is64 ? tr("bitness.64") : tr("bitness.32"))
 				.endianness("Little-endian")
-				.entriesTitle("Sections")
+				.entriesTitle(tr("entries.sections"))
 				.details(details)
 				.entries(entries)
 				.build();
@@ -126,7 +131,7 @@ public final class ExecutableParser {
 		boolean dynamic = false;
 		for (int i = 0; i < phnum; i++) {
 			int off = Math.toIntExact(phoff + ((long) i * phentsize));
-			r.requireRange(off, phentsize, "ELF program header table is truncated");
+			r.requireRange(off, phentsize, "parse.error.elf.program.headers.truncated");
 			long pType = r.u32(off);
 			long pOffset = is64 ? r.u64(off + 8) : r.u32(off + 4);
 			long pFilesz = is64 ? r.u64(off + 32) : r.u32(off + 16);
@@ -140,10 +145,10 @@ public final class ExecutableParser {
 		byte[] names = new byte[0];
 		if (shnum > 0 && shstrndx > 0 && shstrndx < shnum) {
 			int shstrOff = Math.toIntExact(shoff + ((long) shstrndx * shentsize));
-			r.requireRange(shstrOff, shentsize, "ELF string table header is truncated");
+			r.requireRange(shstrOff, shentsize, "parse.error.elf.string.header.truncated");
 			long tableOffset = is64 ? r.u64(shstrOff + 24) : r.u32(shstrOff + 16);
 			long tableSize = is64 ? r.u64(shstrOff + 32) : r.u32(shstrOff + 20);
-			r.requireRange(Math.toIntExact(tableOffset), Math.toIntExact(tableSize), "ELF section string table is truncated");
+			r.requireRange(Math.toIntExact(tableOffset), Math.toIntExact(tableSize), "parse.error.elf.string.table.truncated");
 			names = r.slice(Math.toIntExact(tableOffset), Math.toIntExact(tableSize));
 		}
 
@@ -151,7 +156,7 @@ public final class ExecutableParser {
 		List<ExecutableTableEntry> entries = new ArrayList<>();
 		for (int i = 0; i < shnum; i++) {
 			int off = Math.toIntExact(shoff + ((long) i * shentsize));
-			r.requireRange(off, shentsize, "ELF section table is truncated");
+			r.requireRange(off, shentsize, "parse.error.elf.sections.truncated");
 			int nameIndex = (int) r.u32(off);
 			String name = readElfString(names, nameIndex);
 			long flags = is64 ? r.u64(off + 8) : r.u32(off + 8);
@@ -172,12 +177,12 @@ public final class ExecutableParser {
 		details.put("ABI Version", Integer.toString(data[8] & 0xFF));
 		details.put("Entrypoint", hex(entry));
 		details.put("Program Headers", Integer.toString(phnum));
-		details.put("Sections", Integer.toString(shnum));
-		details.put("Dynamic Linking", dynamic ? "Yes" : "No");
-		details.put("Position Independent", type == 3 ? "Yes" : "No");
-		details.put("Stripped", stripped ? "Likely" : "No");
+		details.put(tr("detail.sections"), Integer.toString(shnum));
+		details.put(tr("detail.dynamic.linking"), dynamic ? tr("value.yes") : tr("value.no"));
+		details.put(tr("detail.position.independent"), type == 3 ? tr("value.yes") : tr("value.no"));
+		details.put(tr("detail.stripped"), stripped ? tr("value.likely") : tr("value.no"));
 		if (interpreter != null && !interpreter.isBlank()) {
-			details.put("Interpreter", interpreter);
+			details.put(tr("detail.interpreter"), interpreter);
 		}
 
 		return ExecutableFileInfo.builder()
@@ -185,9 +190,9 @@ public final class ExecutableParser {
 				.fileType(elfType(type))
 				.platform("Linux / Unix")
 				.architecture(elfMachine(machine))
-				.bitness(is64 ? "64-bit" : "32-bit")
+				.bitness(is64 ? tr("bitness.64") : tr("bitness.32"))
 				.endianness(littleEndian ? "Little-endian" : "Big-endian")
-				.entriesTitle("Sections")
+				.entriesTitle(tr("entries.sections"))
 				.details(details)
 				.entries(entries)
 				.build();
@@ -208,20 +213,20 @@ public final class ExecutableParser {
 		long entryPoint = -1;
 		List<ExecutableTableEntry> entries = new ArrayList<>();
 		for (int i = 0; i < ncmds; i++) {
-			r.requireRange(cursor, 8, "Mach-O load command table is truncated");
+			r.requireRange(cursor, 8, "parse.error.macho.commands.truncated");
 			int command = r.s32(cursor);
 			int commandSize = r.s32(cursor + 4);
 			if (commandSize < 8) {
-				throw new ExecutableParseException("Invalid Mach-O load command size.");
+				throw new ExecutableParseException(tr("parse.error.macho.command.size"));
 			}
-			r.requireRange(cursor, commandSize, "Mach-O load command exceeds file size");
+			r.requireRange(cursor, commandSize, "parse.error.macho.command.exceeds");
 			if (command == (is64 ? 0x19 : 0x1)) {
 				int sectionCount = r.s32(cursor + (is64 ? 64 : 48));
 				int sectionOffset = cursor + (is64 ? 72 : 56);
 				int sectionSize = is64 ? 80 : 68;
 				for (int s = 0; s < sectionCount; s++) {
 					int sectionCursor = sectionOffset + (s * sectionSize);
-					r.requireRange(sectionCursor, sectionSize, "Mach-O section table is truncated");
+					r.requireRange(sectionCursor, sectionSize, "parse.error.macho.sections.truncated");
 					String sectName = r.nullTerminatedAscii(sectionCursor, 16);
 					String segName = r.nullTerminatedAscii(sectionCursor + 16, 16);
 					long addr = is64 ? r.u64(sectionCursor + 32) : r.u32(sectionCursor + 32);
@@ -243,20 +248,20 @@ public final class ExecutableParser {
 		LinkedHashMap<String, String> details = new LinkedHashMap<>();
 		details.put("CPU Type", machCpuType(cpuType));
 		details.put("Load Commands", Integer.toString(ncmds));
-		details.put("Flags", machFlags(flags));
+		details.put(tr("detail.flags"), machFlags(flags));
 		if (entryPoint >= 0) {
 			details.put("Entrypoint Offset", hex(entryPoint));
 		}
-		details.put("Position Independent", (flags & 0x200000) != 0 ? "Yes" : "No");
+		details.put(tr("detail.position.independent"), (flags & 0x200000) != 0 ? tr("value.yes") : tr("value.no"));
 
 		return ExecutableFileInfo.builder()
 				.format("Mach-O")
 				.fileType(machFileType(fileType))
 				.platform("macOS")
 				.architecture(machCpuType(cpuType))
-				.bitness(is64 ? "64-bit" : "32-bit")
+				.bitness(is64 ? tr("bitness.64") : tr("bitness.32"))
 				.endianness(littleEndian ? "Little-endian" : "Big-endian")
-				.entriesTitle("Sections")
+				.entriesTitle(tr("entries.sections"))
 				.details(details)
 				.entries(entries)
 				.build();
@@ -273,7 +278,7 @@ public final class ExecutableParser {
 		List<ExecutableTableEntry> entries = new ArrayList<>();
 		for (int i = 0; i < count; i++) {
 			int off = 8 + (i * entrySize);
-			r.requireRange(off, entrySize, "Mach-O fat header is truncated");
+			r.requireRange(off, entrySize, "parse.error.macho.fat.truncated");
 			int cpuType = r.s32(off);
 			long offset = is64 ? r.u64(off + 8) : r.u32(off + 8);
 			long size = is64 ? r.u64(off + 16) : r.u32(off + 12);
@@ -287,20 +292,20 @@ public final class ExecutableParser {
 		}
 
 		LinkedHashMap<String, String> details = new LinkedHashMap<>();
-		details.put("Slices", Integer.toString(count));
-		details.put("Container", is64 ? "Fat Mach-O 64" : "Fat Mach-O");
+		details.put(tr("detail.slices"), Integer.toString(count));
+		details.put(tr("detail.container"), is64 ? "Fat Mach-O 64" : "Fat Mach-O");
 
 		return ExecutableFileInfo.builder()
 				.format("Mach-O (Universal)")
-				.fileType("Fat binary")
+				.fileType(tr("type.fat.binary"))
 				.platform("macOS")
-				.architecture("Multi-architecture")
-				.bitness(is64 ? "64-bit offsets" : "32-bit offsets")
+				.architecture(tr("architecture.multi"))
+				.bitness(is64 ? tr("bitness.64.offsets") : tr("bitness.32.offsets"))
 				.endianness(littleEndian ? "Little-endian" : "Big-endian")
-				.entriesTitle("Architectures")
+				.entriesTitle(tr("entries.architectures"))
 				.details(details)
 				.entries(entries)
-				.note("Contained slices are listed without parsing each inner Mach-O image.")
+				.note(tr("note.fat.slices"))
 				.build();
 	}
 
@@ -333,10 +338,6 @@ public final class ExecutableParser {
 		return (value & flag) != 0;
 	}
 
-	private static String suffix(String fileName) {
-		return fileName == null || fileName.isBlank() ? "" : " for " + fileName;
-	}
-
 	private static String readElfString(byte[] table, int offset) {
 		if (offset < 0 || offset >= table.length) {
 			return "";
@@ -350,7 +351,7 @@ public final class ExecutableParser {
 
 	private static String formatTimestamp(long epochSeconds) {
 		if (epochSeconds <= 0) {
-			return "Unknown";
+			return tr("value.unknown");
 		}
 		return java.time.Instant.ofEpochSecond(epochSeconds).toString();
 	}
@@ -403,11 +404,11 @@ public final class ExecutableParser {
 
 	private static String elfType(int type) {
 		return switch (type) {
-			case 1 -> "Relocatable";
-			case 2 -> "Executable";
-			case 3 -> "Shared object";
-			case 4 -> "Core";
-			default -> "Type " + type;
+			case 1 -> tr("type.elf.relocatable");
+			case 2 -> tr("type.executable");
+			case 3 -> tr("type.elf.shared.object");
+			case 4 -> tr("type.core");
+			default -> tr("type.other", String.valueOf(type));
 		};
 	}
 
@@ -465,15 +466,15 @@ public final class ExecutableParser {
 
 	private static String machFileType(int fileType) {
 		return switch (fileType) {
-			case 1 -> "Object";
-			case 2 -> "Executable";
-			case 3 -> "Fixed VM library";
-			case 4 -> "Core";
-			case 5 -> "Preloaded executable";
-			case 6 -> "Dynamic library";
-			case 7 -> "Dynamic linker";
-			case 8 -> "Bundle";
-			default -> "Type " + fileType;
+			case 1 -> tr("type.macho.object");
+			case 2 -> tr("type.executable");
+			case 3 -> tr("type.macho.fixed.vm.library");
+			case 4 -> tr("type.core");
+			case 5 -> tr("type.macho.preloaded");
+			case 6 -> tr("type.macho.dylib");
+			case 7 -> tr("type.macho.dylinker");
+			case 8 -> tr("type.macho.bundle");
+			default -> tr("type.other", String.valueOf(fileType));
 		};
 	}
 
@@ -491,7 +492,7 @@ public final class ExecutableParser {
 		if ((flags & 0x200000) != 0) {
 			values.add("pie");
 		}
-		return values.isEmpty() ? "None" : String.join(", ", values);
+		return values.isEmpty() ? tr("value.none") : String.join(", ", values);
 	}
 
 	private static final class BinaryReader {
@@ -511,14 +512,14 @@ public final class ExecutableParser {
 			return new BinaryReader(data, false);
 		}
 
-		void requireRange(int offset, int length, String message) throws ExecutableParseException {
+		void requireRange(int offset, int length, String messageKey) throws ExecutableParseException {
 			if (offset < 0 || length < 0 || offset + length > data.length) {
-				throw new ExecutableParseException(message + ".");
+				throw new ExecutableParseException(tr(messageKey) + ".");
 			}
 		}
 
 		int u16(int offset) throws ExecutableParseException {
-			requireRange(offset, 2, "Unexpected end of file");
+			requireRange(offset, 2, "parse.error.unexpected.eof");
 			if (littleEndian) {
 				return (data[offset] & 0xFF) | ((data[offset + 1] & 0xFF) << 8);
 			}
@@ -530,7 +531,7 @@ public final class ExecutableParser {
 		}
 
 		long u32(int offset) throws ExecutableParseException {
-			requireRange(offset, 4, "Unexpected end of file");
+			requireRange(offset, 4, "parse.error.unexpected.eof");
 			if (littleEndian) {
 				return ((long) data[offset] & 0xFF)
 						| (((long) data[offset + 1] & 0xFF) << 8)
@@ -544,7 +545,7 @@ public final class ExecutableParser {
 		}
 
 		long u64(int offset) throws ExecutableParseException {
-			requireRange(offset, 8, "Unexpected end of file");
+			requireRange(offset, 8, "parse.error.unexpected.eof");
 			long low;
 			long high;
 			if (littleEndian) {
@@ -558,7 +559,7 @@ public final class ExecutableParser {
 		}
 
 		String nullTerminatedAscii(int offset, int maxLength) throws ExecutableParseException {
-			requireRange(offset, maxLength, "Unexpected end of file");
+			requireRange(offset, maxLength, "parse.error.unexpected.eof");
 			int end = offset;
 			while (end < offset + maxLength && data[end] != 0) {
 				end++;
@@ -567,7 +568,7 @@ public final class ExecutableParser {
 		}
 
 		String utf8(int offset, int maxLength) throws ExecutableParseException {
-			requireRange(offset, maxLength, "Unexpected end of file");
+			requireRange(offset, maxLength, "parse.error.unexpected.eof");
 			int end = offset;
 			while (end < offset + maxLength && data[end] != 0) {
 				end++;
@@ -576,7 +577,7 @@ public final class ExecutableParser {
 		}
 
 		byte[] slice(int offset, int length) throws ExecutableParseException {
-			requireRange(offset, length, "Unexpected end of file");
+			requireRange(offset, length, "parse.error.unexpected.eof");
 			byte[] out = new byte[length];
 			System.arraycopy(data, offset, out, 0, length);
 			return out;

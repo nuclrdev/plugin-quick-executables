@@ -1,5 +1,7 @@
 package dev.nuclr.plugin.core.quick.viewer;
 
+import static dev.nuclr.plugin.core.quick.viewer.Messages.tr;
+
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
@@ -22,6 +24,7 @@ import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.border.Border;
 
+
 import dev.nuclr.platform.plugin.NuclrResource;
 import dev.nuclr.plugin.core.quick.viewer.exec.ExecutableFileInfo;
 import dev.nuclr.plugin.core.quick.viewer.exec.ExecutableParser;
@@ -37,7 +40,7 @@ public class ExecutableViewPanel extends JPanel {
 
 	public ExecutableViewPanel() {
 		setLayout(new BorderLayout());
-		showMessage("No file selected.");
+		showMessage(tr("view.no.file"));
 	}
 
 	public boolean load(NuclrResource item, AtomicBoolean cancelled) {
@@ -45,7 +48,7 @@ public class ExecutableViewPanel extends JPanel {
 		if (prev != null) {
 			prev.interrupt();
 		}
-		showMessage("Loading...");
+		showMessage(tr("view.loading"));
 		loadThread = Thread.ofVirtual().start(() -> {
 			try {
 				byte[] data;
@@ -102,7 +105,7 @@ public class ExecutableViewPanel extends JPanel {
 		gbc.gridx = 0;
 		gbc.insets = new Insets(4, 0, 4, 0);
 
-		JLabel title = new JLabel("Unsupported or invalid executable");
+		JLabel title = new JLabel(tr("view.error.title"));
 		title.setFont(title.getFont().deriveFont(Font.BOLD, 14f));
 		gbc.gridy = 0;
 		errPanel.add(title, gbc);
@@ -137,22 +140,22 @@ public class ExecutableViewPanel extends JPanel {
 		panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
 		panel.setBorder(BorderFactory.createEmptyBorder(8, 10, 8, 10));
 
-		FormSection summary = new FormSection("Summary");
-		summary.addRow("Name", item.getName());
-		summary.addRow("File size", formatSize(item.getLength()));
-		summary.addRow("Format", info.getFormat());
-		summary.addRow("Type", info.getFileType());
-		summary.addRow("Architecture", info.getArchitecture());
-		summary.addRow("Bitness", info.getBitness());
-		summary.addRow("Endianness", info.getEndianness());
+		FormSection summary = new FormSection(tr("section.summary"));
+		summary.addRow(tr("summary.name"), item.getName());
+		summary.addRow(tr("summary.file.size"), formatSize(item.getLength()));
+		summary.addRow(tr("summary.format"), info.getFormat());
+		summary.addRow(tr("summary.type"), info.getFileType());
+		summary.addRow(tr("summary.architecture"), info.getArchitecture());
+		summary.addRow(tr("summary.bitness"), info.getBitness());
+		summary.addRow(tr("summary.endianness"), info.getEndianness());
 		if (info.getPlatform() != null) {
-			summary.addRow("Platform", info.getPlatform());
+			summary.addRow(tr("summary.platform"), info.getPlatform());
 		}
 		panel.add(summary);
 		panel.add(vgap(6));
 
 		if (!info.getDetails().isEmpty()) {
-			FormSection detailSection = new FormSection("Details");
+			FormSection detailSection = new FormSection(tr("section.details"));
 			for (Map.Entry<String, String> entry : info.getDetails().entrySet()) {
 				detailSection.addRow(entry.getKey(), entry.getValue());
 			}
@@ -161,7 +164,7 @@ public class ExecutableViewPanel extends JPanel {
 		}
 
 		if (!info.getNotes().isEmpty()) {
-			FormSection notesSection = new FormSection("Notes");
+			FormSection notesSection = new FormSection(tr("section.notes"));
 			for (String note : info.getNotes()) {
 				notesSection.addMonoText(note);
 			}
@@ -184,24 +187,24 @@ public class ExecutableViewPanel extends JPanel {
 
 	static String formatSize(long bytes) {
 		if (bytes < 0) {
-			return "Unknown";
+			return tr("value.unknown");
 		}
 		if (bytes < 1024) {
-			return bytes + " B";
+			return tr("size.bytes", String.valueOf(bytes));
 		}
 		double kb = bytes / 1024.0;
 		if (kb < 1024) {
-			return String.format("%.1f KB", kb);
+			return tr("size.kb", String.format("%.1f", kb));
 		}
 		double mb = kb / 1024.0;
 		if (mb < 1024) {
-			return String.format("%.1f MB", mb);
+			return tr("size.mb", String.format("%.1f", mb));
 		}
 		double gb = mb / 1024.0;
 		if (gb < 1024) {
-			return String.format("%.2f GB", gb);
+			return tr("size.gb", String.format("%.2f", gb));
 		}
-		return String.format("%.2f TB", gb / 1024.0);
+		return tr("size.tb", String.format("%.2f", gb / 1024.0));
 	}
 
 	static String escapeHtml(String s) {

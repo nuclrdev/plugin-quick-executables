@@ -1,5 +1,7 @@
 package dev.nuclr.plugin.core.quick.viewer;
 
+import static dev.nuclr.plugin.core.quick.viewer.Messages.tr;
+
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -13,6 +15,7 @@ import java.util.stream.Stream;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
+
 
 import javax.swing.JComponent;
 
@@ -57,6 +60,9 @@ public class ExecutableQuickViewProvider implements QuickViewNuclrPlugin {
 
 	@Override
 	public void preinit(NuclrPluginContext ctx) {
+		if (ctx != null) {
+			Messages.use(ctx.getLocale());
+		}
 		this.context = ctx;
 	}
 
@@ -185,7 +191,7 @@ public class ExecutableQuickViewProvider implements QuickViewNuclrPlugin {
 				lines.add(PageThumbnail.Line.text(detail.getKey() + ": " + detail.getValue()));
 			}
 			if (!info.getEntries().isEmpty()) {
-				lines.add(PageThumbnail.Line.heading(info.getEntriesTitle() != null ? info.getEntriesTitle() : "Entries"));
+				lines.add(PageThumbnail.Line.heading(info.getEntriesTitle() != null ? info.getEntriesTitle() : tr("entries.default")));
 				info.getEntries().stream().limit(100).map(ExecutableTableEntry::getName)
 						.forEach(name -> lines.add(PageThumbnail.Line.mono(name)));
 			}
